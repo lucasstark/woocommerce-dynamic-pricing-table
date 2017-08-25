@@ -212,7 +212,11 @@ final class WC_Dynamic_Pricing_Table {
         if ( $pricing_rule_sets['rules'][$key]['to'] < 1 ){
           $rules_to = __( ' or more', 'woocommerce-dynamic-pricing-table' );
         } else {
-          $rules_to = ' - ' . wc_stock_amount( $pricing_rule_sets['rules'][$key]['to'] );
+          if ( wc_stock_amount( $pricing_rule_sets['rules'][$key]['to'] ) > wc_stock_amount( $pricing_rule_sets['rules'][$key]['from'] ) ) {
+            $rules_to = ' - ' . wc_stock_amount( $pricing_rule_sets['rules'][$key]['to'] );
+          } else {
+            $rules_to = '';
+          }
         }
 
         $output .= '<tr>';
