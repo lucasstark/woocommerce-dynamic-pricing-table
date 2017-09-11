@@ -3,7 +3,7 @@
  * Plugin Name:       WooCommerce Dynamic Pricing Table
  * Plugin URI:        https://github.com/stuartduff/woocommerce-dynamic-pricing-table
  * Description:       Displays a pricing discount table on WooCommerce products, a user role discount message and a simple category discount message when using the WooCommerce Dynamic Pricing plugin.
- * Version:           1.0.5
+ * Version:           1.0.6
  * Author:            Stuart Duff
  * Author URI:        http://stuartduff.com
  * Requires at least: 4.6
@@ -333,6 +333,10 @@ final class WC_Dynamic_Pricing_Table {
 	 */
 	public function role_discount_notification_message() {
 
+		if(!is_user_logged_in()){
+			return;
+		}
+
 		$role_pricing_rule_sets    = get_option( '_s_membership_pricing_rules', array() );
 		$current_user_role         = $this->get_current_user()->roles[0];
 		$current_user_display_name = $this->get_current_user()->display_name;
@@ -341,24 +345,25 @@ final class WC_Dynamic_Pricing_Table {
 
 			// Gets the discount role of the user and the discount amount.
 
+			if (isset( $role_rules['conditions'][0]['args']['roles'])) {
+				$user_discount_role   = $role_rules['conditions'][0]['args']['roles'][0];
+				$role_discount_amount = $role_rules['rules'][0]['amount'];
 
-			$user_discount_role   = $role_rules['conditions'][0]['args']['roles'][0];
-			$role_discount_amount = $role_rules['rules'][0]['amount'];
+				if ( is_woocommerce() && $current_user_role === $user_discount_role && null !== $user_discount_role ) {
 
-			if ( is_woocommerce() && $current_user_role === $user_discount_role && null !== $user_discount_role ) {
+					switch ( $role_rules['rules'][0]['type'] ) {
 
-				switch ( $role_rules['rules'][0]['type'] ) {
+						case 'percent_product':
+							$info_message = sprintf( __( 'Hi %1$s as a %2$s you will receive a %3$s percent discount on all products.', 'woocommerce-dynamic-pricing-table' ), esc_attr( $current_user_display_name ), esc_attr( $current_user_role ), floatval( $role_discount_amount ) );
+							break;
 
-					case 'percent_product':
-						$info_message = sprintf( __( 'Hi %1$s as a %2$s you will receive a %3$s percent discount on all products.', 'woocommerce-dynamic-pricing-table' ), esc_attr( $current_user_display_name ), esc_attr( $current_user_role ), floatval( $role_discount_amount ) );
-						break;
+						case 'fixed_product':
+							$info_message = sprintf( __( 'Hi %1$s as a %2$s you will receive a %3$s discount on all products.', 'woocommerce-dynamic-pricing-table' ), esc_attr( $current_user_display_name ), esc_attr( $current_user_role ), wc_price( $role_discount_amount ) );
+							break;
 
-					case 'fixed_product':
-						$info_message = sprintf( __( 'Hi %1$s as a %2$s you will receive a %3$s discount on all products.', 'woocommerce-dynamic-pricing-table' ), esc_attr( $current_user_display_name ), esc_attr( $current_user_role ), wc_price( $role_discount_amount ) );
-						break;
+					}
 
 				}
-
 			}
 
 		}
@@ -392,27 +397,28 @@ final class WC_Dynamic_Pricing_Table {
 
 		foreach ( $category_pricing_rule_sets as $category_rules ) {
 
-			// Gets the discount category and the discount amount set for the category.
-			$discount_category        = $category_rules['collector']['args']['cats'][0];
-			$category_discount_amount = $category_rules['rules'][0]['amount'];
+			if (isset($category_rules['collector']['args']['cats'][0])) {
+				// Gets the discount category and the discount amount set for the category.
+				$discount_category        = $category_rules['collector']['args']['cats'][0];
+				$category_discount_amount = $category_rules['rules'][0]['amount'];
 
 
-			if ( is_product_category() && $current_product_category == $discount_category && null != $discount_category ) {
+				if ( is_product_category() && $current_product_category == $discount_category && null != $discount_category ) {
 
-				switch ( $category_rules['rules'][0]['type'] ) {
+					switch ( $category_rules['rules'][0]['type'] ) {
 
-					case 'percent_product':
-						$info_message = sprintf( __( 'You will receive a %1$s percent discount on all products within the %2$s category.', 'woocommerce-dynamic-pricing-table' ), floatval( $category_discount_amount ), esc_attr( $current_category_name ) );
-						break;
+						case 'percent_product':
+							$info_message = sprintf( __( 'You will receive a %1$s percent discount on all products within the %2$s category.', 'woocommerce-dynamic-pricing-table' ), floatval( $category_discount_amount ), esc_attr( $current_category_name ) );
+							break;
 
-					case 'fixed_product':
-						$info_message = sprintf( __( 'You will receive %1$s discount on all products within the %2$s category.', 'woocommerce-dynamic-pricing-table' ), wc_price( $category_discount_amount ), esc_attr( $current_category_name ) );
-						break;
+						case 'fixed_product':
+							$info_message = sprintf( __( 'You will receive %1$s discount on all products within the %2$s category.', 'woocommerce-dynamic-pricing-table' ), wc_price( $category_discount_amount ), esc_attr( $current_category_name ) );
+							break;
+
+					}
 
 				}
-
 			}
-
 		}
 
 		if ( isset( $info_message ) ) {
