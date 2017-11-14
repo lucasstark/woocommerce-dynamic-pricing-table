@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name:       WooCommerce Dynamic Pricing Table
- * Plugin URI:        https://github.com/stuartduff/woocommerce-dynamic-pricing-table
+ * Plugin URI:        https://github.com/lucasstark/woocommerce-dynamic-pricing-table
  * Description:       Displays a pricing discount table on WooCommerce products, a user role discount message and a simple category discount message when using the WooCommerce Dynamic Pricing plugin.
- * Version:           1.0.6
- * Author:            Stuart Duff
- * Author URI:        http://stuartduff.com
+ * Version:           1.0.7
+ * Author:            Lucas Stark
+ * Author URI:        https://elementstark.com
  * Requires at least: 4.6
  * Tested up to:      4.6
  *
@@ -171,7 +171,35 @@ final class WC_Dynamic_Pricing_Table {
 	 * @return  get_post_meta()
 	 */
 	public function get_pricing_array_rule_sets() {
-		return get_post_meta( get_the_ID(), '_pricing_rules', true );
+
+		$results    = array();
+		$product    = wc_get_product( get_the_ID() );
+		$price_sets = get_post_meta( get_the_ID(), '_pricing_rules', true );
+
+
+		if ( empty( $price_sets ) ) {
+
+
+			$price_sets = get_option( '_a_category_pricing_rules', array() );
+
+			if ( !empty( $price_sets ) ) {
+
+				foreach ( $price_sets as $key => $price_set ) {
+					$terms = WC_Dynamic_Pricing_Compatibility::get_product_category_ids($product);
+					if ( count( array_intersect( $price_set['collector']['args']['cats'], $terms ) ) > 0 ) {
+						if ( count( array_intersect( $price_set['targets'], $terms ) ) > 0 ) {
+							$results[ $key ] = $price_set;
+						}
+					}
+
+				}
+
+			}
+		} else {
+			$results = $price_sets;
+		}
+
+		return $price_sets;
 	}
 
 	/**
@@ -180,7 +208,8 @@ final class WC_Dynamic_Pricing_Table {
 	 * @since   1.0.0
 	 * @return  wp_get_current_user()
 	 */
-	public function get_current_user() {
+	public
+	function get_current_user() {
 		return wp_get_current_user();
 	}
 
@@ -190,7 +219,8 @@ final class WC_Dynamic_Pricing_Table {
 	 * @since   1.0.0
 	 * @return  get_queiried object()
 	 */
-	public function pricing_queried_object() {
+	public
+	function pricing_queried_object() {
 		return get_queried_object();
 	}
 
@@ -200,7 +230,8 @@ final class WC_Dynamic_Pricing_Table {
 	 * @since   1.0.0
 	 * @return  $output
 	 */
-	public function bulk_pricing_table_output() {
+	public
+	function bulk_pricing_table_output() {
 
 		$array_rule_sets = $this->get_pricing_array_rule_sets();
 
@@ -261,7 +292,8 @@ final class WC_Dynamic_Pricing_Table {
 	 * @since   1.0.0
 	 * @return  $output
 	 */
-	public function special_offer_pricing_table_output() {
+	public
+	function special_offer_pricing_table_output() {
 
 		$array_rule_sets = $this->get_pricing_array_rule_sets();
 
@@ -310,7 +342,8 @@ final class WC_Dynamic_Pricing_Table {
 	 * @access  public
 	 * @since   1.0.0
 	 */
-	public function output_dynamic_pricing_table() {
+	public
+	function output_dynamic_pricing_table() {
 
 		$array_rule_sets = $this->get_pricing_array_rule_sets();
 
@@ -331,9 +364,10 @@ final class WC_Dynamic_Pricing_Table {
 	 * @since   1.0.0
 	 * @return  wc_add_notice()
 	 */
-	public function role_discount_notification_message() {
+	public
+	function role_discount_notification_message() {
 
-		if(!is_user_logged_in()){
+		if ( !is_user_logged_in() ) {
 			return;
 		}
 
@@ -345,7 +379,7 @@ final class WC_Dynamic_Pricing_Table {
 
 			// Gets the discount role of the user and the discount amount.
 
-			if (isset( $role_rules['conditions'][0]['args']['roles'])) {
+			if ( isset( $role_rules['conditions'][0]['args']['roles'] ) ) {
 				$user_discount_role   = $role_rules['conditions'][0]['args']['roles'][0];
 				$role_discount_amount = $role_rules['rules'][0]['amount'];
 
@@ -379,7 +413,8 @@ final class WC_Dynamic_Pricing_Table {
 	 * @access  public
 	 * @since   1.0.0
 	 */
-	public function output_dynamic_pricing_role_message() {
+	public
+	function output_dynamic_pricing_role_message() {
 		$this->role_discount_notification_message();
 	}
 
@@ -389,7 +424,8 @@ final class WC_Dynamic_Pricing_Table {
 	 * @since   1.0.0
 	 * @return  wc_add_notice()
 	 */
-	public function category_discount_notification_message() {
+	public
+	function category_discount_notification_message() {
 
 		$category_pricing_rule_sets = get_option( '_s_category_pricing_rules', array() );
 		$current_product_category   = $this->pricing_queried_object()->term_id;
@@ -397,7 +433,7 @@ final class WC_Dynamic_Pricing_Table {
 
 		foreach ( $category_pricing_rule_sets as $category_rules ) {
 
-			if (isset($category_rules['collector']['args']['cats'][0])) {
+			if ( isset( $category_rules['collector']['args']['cats'][0] ) ) {
 				// Gets the discount category and the discount amount set for the category.
 				$discount_category        = $category_rules['collector']['args']['cats'][0];
 				$category_discount_amount = $category_rules['rules'][0]['amount'];
@@ -432,7 +468,8 @@ final class WC_Dynamic_Pricing_Table {
 	 * @access  public
 	 * @since   1.0.0
 	 */
-	public function output_dynamic_pricing_category_message() {
+	public
+	function output_dynamic_pricing_category_message() {
 		$this->category_discount_notification_message();
 	}
 
