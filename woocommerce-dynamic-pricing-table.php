@@ -199,7 +199,7 @@ final class WC_Dynamic_Pricing_Table {
 			$results = $price_sets;
 		}
 
-		return $price_sets;
+		return $results;
 	}
 
 	/**
