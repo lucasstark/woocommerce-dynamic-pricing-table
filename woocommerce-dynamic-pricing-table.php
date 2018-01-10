@@ -3,7 +3,7 @@
  * Plugin Name:       WooCommerce Dynamic Pricing Table
  * Plugin URI:        https://github.com/lucasstark/woocommerce-dynamic-pricing-table
  * Description:       Displays a pricing discount table on WooCommerce products, a user role discount message and a simple category discount message when using the WooCommerce Dynamic Pricing plugin.
- * Version:           1.0.7
+ * Version:           1.0.8
  * Author:            Lucas Stark
  * Author URI:        https://elementstark.com
  * Requires at least: 4.6
@@ -14,7 +14,7 @@
  *
  * @package WC_Dynamic_Pricing_Table
  */
-if ( !defined( 'ABSPATH' ) ) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
 
@@ -63,6 +63,16 @@ final class WC_Dynamic_Pricing_Table {
 	 */
 	public $version;
 
+
+	/**
+	 * The js and css version number
+	 * @var string
+	 * @access public
+	 * @since 1.0.8
+	 */
+	public $assets_version;
+
+
 	/**
 	 * Constructor function.
 	 * @access  public
@@ -74,6 +84,7 @@ final class WC_Dynamic_Pricing_Table {
 		$this->plugin_url  = plugin_dir_url( __FILE__ );
 		$this->plugin_path = plugin_dir_path( __FILE__ );
 		$this->version     = '1.0.0';
+		$this->assets_version = '1.0.8';
 
 		register_activation_hook( __FILE__, array( $this, 'install' ) );
 
@@ -81,6 +92,7 @@ final class WC_Dynamic_Pricing_Table {
 
 		add_action( 'init', array( $this, 'plugin_setup' ) );
 
+		add_action( 'wp_enqueue_scripts', array( $this, 'on_wp_enqueue_scripts' ) );
 	}
 
 	/**
@@ -143,7 +155,7 @@ final class WC_Dynamic_Pricing_Table {
 		if ( class_exists( 'WC_Dynamic_Pricing' ) ) {
 			add_action( 'woocommerce_before_add_to_cart_button', array( $this, 'output_dynamic_pricing_table' ) );
 
-			if ( !is_admin() ) {
+			if ( ! is_admin() ) {
 				add_action( 'wp', array( $this, 'output_dynamic_pricing_role_message' ) );
 				add_action( 'wp', array( $this, 'output_dynamic_pricing_category_message' ) );
 			}
@@ -164,6 +176,12 @@ final class WC_Dynamic_Pricing_Table {
     </div>';
 	}
 
+
+	public function on_wp_enqueue_scripts() {
+		wp_enqueue_script( 'woocommerce-dynamic-pricing-table', $this->plugin_url . '/assets/js/front-end.js', array( 'jquery' ), $this->assets_version );
+	}
+
+
 	/**
 	 * Gets the dynamic pricing rules sets from the post meta.
 	 * @access  public
@@ -182,10 +200,10 @@ final class WC_Dynamic_Pricing_Table {
 
 			$price_sets = get_option( '_a_category_pricing_rules', array() );
 
-			if ( !empty( $price_sets ) ) {
+			if ( ! empty( $price_sets ) ) {
 
 				foreach ( $price_sets as $key => $price_set ) {
-					$terms = WC_Dynamic_Pricing_Compatibility::get_product_category_ids($product);
+					$terms = WC_Dynamic_Pricing_Compatibility::get_product_category_ids( $product );
 					if ( count( array_intersect( $price_set['collector']['args']['cats'], $terms ) ) > 0 ) {
 						if ( count( array_intersect( $price_set['targets'], $terms ) ) > 0 ) {
 							$results[ $key ] = $price_set;
@@ -230,53 +248,53 @@ final class WC_Dynamic_Pricing_Table {
 	 * @since   1.0.0
 	 * @return  $output
 	 */
-	public
-	function bulk_pricing_table_output() {
+	public function bulk_pricing_table_output( $pricing_rule_set ) {
 
-		$array_rule_sets = $this->get_pricing_array_rule_sets();
+		$table_class = '';
+		if ( isset( $pricing_rule_set['variation_rules'] ) && ! empty( $pricing_rule_set['variation_rules'] ) ) {
+			foreach ( $pricing_rule_set['variation_rules']['args']['variations'] as $variation_id ) {
+				$table_class .= ' dynamic-pricing-table-variation-' . $variation_id;
+			}
+		}
 
-		$output = '<table class="dynamic-pricing-table">';
+		$output = '<table style="display:none;" class="dynamic-pricing-table' . $table_class . '">';
 
 		$output .= '<th>' . __( 'Quantity', 'woocommerce-dynamic-pricing-table' ) . '</th><th>' . __( 'Bulk Purchase Pricing', 'woocommerce-dynamic-pricing-table' ) . '</th>';
 
-		foreach ( $array_rule_sets as $pricing_rule_sets ) {
+		foreach ( $pricing_rule_set['rules'] as $key => $value ) {
 
-			foreach ( $pricing_rule_sets['rules'] as $key => $value ) {
-
-				// Checks if a product discount group max quantity field is less than 1.
-				if ( $pricing_rule_sets['rules'][ $key ]['to'] < 1 ) {
-					$rules_to = __( ' or more', 'woocommerce-dynamic-pricing-table' );
+			// Checks if a product discount group max quantity field is less than 1.
+			if ( $pricing_rule_set['rules'][ $key ]['to'] < 1 ) {
+				$rules_to = __( ' or more', 'woocommerce-dynamic-pricing-table' );
+			} else {
+				if ( wc_stock_amount( $pricing_rule_set['rules'][ $key ]['to'] ) > wc_stock_amount( $pricing_rule_set['rules'][ $key ]['from'] ) ) {
+					$rules_to = ' - ' . wc_stock_amount( $pricing_rule_set['rules'][ $key ]['to'] );
 				} else {
-					if ( wc_stock_amount( $pricing_rule_sets['rules'][ $key ]['to'] ) > wc_stock_amount( $pricing_rule_sets['rules'][ $key ]['from'] ) ) {
-						$rules_to = ' - ' . wc_stock_amount( $pricing_rule_sets['rules'][ $key ]['to'] );
-					} else {
-						$rules_to = '';
-					}
+					$rules_to = '';
 				}
+			}
 
-				$output .= '<tr>';
+			$output .= '<tr>';
 
-				$output .= '<td><span class="discount-quantity">' . wc_stock_amount( $pricing_rule_sets['rules'][ $key ]['from'] ) . $rules_to . '</span></td>';
+			$output .= '<td><span class="discount-quantity">' . wc_stock_amount( $pricing_rule_set['rules'][ $key ]['from'] ) . $rules_to . '</span></td>';
 
-				switch ( $pricing_rule_sets['rules'][ $key ]['type'] ) {
+			switch ( $pricing_rule_set['rules'][ $key ]['type'] ) {
 
-					case 'price_discount':
-						$output .= '<td><span class="discount-amount">' . sprintf( __( '%1$s Discount Per Item', 'woocommerce-dynamic-pricing-table' ), wc_price( $pricing_rule_sets['rules'][ $key ]['amount'] ) ) . '</span></td>';
-						break;
+				case 'price_discount':
+					$output .= '<td><span class="discount-amount">' . sprintf( __( '%1$s Discount Per Item', 'woocommerce-dynamic-pricing-table' ), wc_price( $pricing_rule_set['rules'][ $key ]['amount'] ) ) . '</span></td>';
+					break;
 
-					case 'percentage_discount':
-						$output .= '<td><span class="discount-amount">' . floatval( $pricing_rule_sets['rules'][ $key ]['amount'] ) . __( '% Discount', 'woocommerce-dynamic-pricing-table' ) . '</span></td>';
-						break;
+				case 'percentage_discount':
+					$output .= '<td><span class="discount-amount">' . floatval( $pricing_rule_set['rules'][ $key ]['amount'] ) . __( '% Discount', 'woocommerce-dynamic-pricing-table' ) . '</span></td>';
+					break;
 
-					case 'fixed_price':
-						$output .= '<td><span class="discount-amount">' . sprintf( __( '%1$s Per Item', 'woocommerce-dynamic-pricing-table' ), wc_price( $pricing_rule_sets['rules'][ $key ]['amount'] ) ) . '</span></td>';
-						break;
-
-				}
-
-				$output .= '</tr>';
+				case 'fixed_price':
+					$output .= '<td><span class="discount-amount">' . sprintf( __( '%1$s Per Item', 'woocommerce-dynamic-pricing-table' ), wc_price( $pricing_rule_set['rules'][ $key ]['amount'] ) ) . '</span></td>';
+					break;
 
 			}
+
+			$output .= '</tr>';
 
 		}
 
@@ -286,50 +304,46 @@ final class WC_Dynamic_Pricing_Table {
 
 	}
 
+
 	/**
 	 * Outputs the dynamic special offer pricing table.
 	 * @access  public
 	 * @since   1.0.0
 	 * @return  $output
 	 */
-	public
-	function special_offer_pricing_table_output() {
-
-		$array_rule_sets = $this->get_pricing_array_rule_sets();
+	public function special_offer_pricing_table_output( $pricing_rule_set ) {
 
 		$output = '<table class="dynamic-pricing-table">';
 
 		$output .= '<th>' . __( 'Quantity', 'woocommerce-dynamic-pricing-table' ) . '</th><th>' . __( 'Special Offer Pricing', 'woocommerce-dynamic-pricing-table' ) . '</th>';
 
-		foreach ( $array_rule_sets as $pricing_rule_sets ) {
 
-			foreach ( $pricing_rule_sets['blockrules'] as $key => $value ) {
+		foreach ( $pricing_rule_set['blockrules'] as $key => $value ) {
 
-				$output .= '<tr>';
+			$output .= '<tr>';
 
-				$output .= '<td><span class="discount-quantity">' . sprintf( __( 'Buy %1$s get %2$s more discounted', 'woocommerce-dynamic-pricing-table' ), wc_stock_amount( $pricing_rule_sets['blockrules'][ $key ]['from'] ), wc_stock_amount( $pricing_rule_sets['blockrules'][ $key ]['adjust'] ) ) . '</span></td>';
+			$output .= '<td><span class="discount-quantity">' . sprintf( __( 'Buy %1$s get %2$s more discounted', 'woocommerce-dynamic-pricing-table' ), wc_stock_amount( $pricing_rule_set['blockrules'][ $key ]['from'] ), wc_stock_amount( $pricing_rule_set['blockrules'][ $key ]['adjust'] ) ) . '</span></td>';
 
-				switch ( $pricing_rule_sets['blockrules'][ $key ]['type'] ) {
+			switch ( $pricing_rule_set['blockrules'][ $key ]['type'] ) {
 
-					case 'fixed_adjustment':
-						$output .= '<td><span class="discount-amount">' . sprintf( __( '%1$s Discount Per Item', 'woocommerce-dynamic-pricing-table' ), wc_price( $pricing_rule_sets['blockrules'][ $key ]['amount'] ) ) . '</span></td>';
-						break;
+				case 'fixed_adjustment':
+					$output .= '<td><span class="discount-amount">' . sprintf( __( '%1$s Discount Per Item', 'woocommerce-dynamic-pricing-table' ), wc_price( $pricing_rule_set['blockrules'][ $key ]['amount'] ) ) . '</span></td>';
+					break;
 
-					case 'percent_adjustment':
-						$output .= '<td><span class="discount-amount">' . floatval( $pricing_rule_sets['blockrules'][ $key ]['amount'] ) . __( '% Discount', 'woocommerce-dynamic-pricing-table' ) . '</span></td>';
-						break;
+				case 'percent_adjustment':
+					$output .= '<td><span class="discount-amount">' . floatval( $pricing_rule_set['blockrules'][ $key ]['amount'] ) . __( '% Discount', 'woocommerce-dynamic-pricing-table' ) . '</span></td>';
+					break;
 
-					case 'fixed_price':
-						$output .= '<td><span class="discount-amount">' . sprintf( __( '%1$s Per Item', 'woocommerce-dynamic-pricing-table' ), wc_price( $pricing_rule_sets['blockrules'][ $key ]['amount'] ) ) . '</span></td>';
-						break;
-
-				}
-
-				$output .= '</tr>';
+				case 'fixed_price':
+					$output .= '<td><span class="discount-amount">' . sprintf( __( '%1$s Per Item', 'woocommerce-dynamic-pricing-table' ), wc_price( $pricing_rule_set['blockrules'][ $key ]['amount'] ) ) . '</span></td>';
+					break;
 
 			}
 
+			$output .= '</tr>';
+
 		}
+
 
 		$output .= '</table>';
 
@@ -342,20 +356,20 @@ final class WC_Dynamic_Pricing_Table {
 	 * @access  public
 	 * @since   1.0.0
 	 */
-	public
-	function output_dynamic_pricing_table() {
+	public function output_dynamic_pricing_table() {
 
 		$array_rule_sets = $this->get_pricing_array_rule_sets();
 
-		if ( $array_rule_sets && is_array( $array_rule_sets ) && sizeof( $array_rule_sets ) == 1 ) {
-			foreach ( $array_rule_sets as $pricing_rule_sets ) {
-				if ( $pricing_rule_sets['mode'] == 'continuous' ) :
-					$this->bulk_pricing_table_output();
-				elseif ( $pricing_rule_sets['mode'] == 'block' ) :
-					$this->special_offer_pricing_table_output();
-				endif;
-			}
+
+		//if ( $array_rule_sets && is_array( $array_rule_sets ) && sizeof( $array_rule_sets ) == 1 ) {
+		foreach ( $array_rule_sets as $pricing_rule_set ) {
+			if ( $pricing_rule_set['mode'] == 'continuous' ) :
+				$this->bulk_pricing_table_output( $pricing_rule_set );
+			elseif ( $pricing_rule_set['mode'] == 'block' ) :
+				$this->special_offer_pricing_table_output( $pricing_rule_set );
+			endif;
 		}
+		//}
 	}
 
 	/**
@@ -364,10 +378,9 @@ final class WC_Dynamic_Pricing_Table {
 	 * @since   1.0.0
 	 * @return  wc_add_notice()
 	 */
-	public
-	function role_discount_notification_message() {
+	public function role_discount_notification_message() {
 
-		if ( !is_user_logged_in() ) {
+		if ( ! is_user_logged_in() ) {
 			return;
 		}
 
