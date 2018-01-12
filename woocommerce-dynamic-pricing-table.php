@@ -251,13 +251,15 @@ final class WC_Dynamic_Pricing_Table {
 	public function bulk_pricing_table_output( $pricing_rule_set ) {
 
 		$table_class = '';
+		$style = '';
 		if ( isset( $pricing_rule_set['variation_rules'] ) && ! empty( $pricing_rule_set['variation_rules'] ) ) {
+			$style = 'style="display:none;"';
 			foreach ( $pricing_rule_set['variation_rules']['args']['variations'] as $variation_id ) {
 				$table_class .= ' dynamic-pricing-table-variation-' . $variation_id;
 			}
 		}
 
-		$output = '<table style="display:none;" class="dynamic-pricing-table' . $table_class . '">';
+		$output = '<table ' . $style . ' class="dynamic-pricing-table' . $table_class . '">';
 
 		$output .= '<th>' . __( 'Quantity', 'woocommerce-dynamic-pricing-table' ) . '</th><th>' . __( 'Bulk Purchase Pricing', 'woocommerce-dynamic-pricing-table' ) . '</th>';
 
