@@ -80,10 +80,10 @@ final class WC_Dynamic_Pricing_Table {
 	 * @return  void
 	 */
 	public function __construct() {
-		$this->token       = 'woocommerce-dynamic-pricing-table';
-		$this->plugin_url  = plugin_dir_url( __FILE__ );
-		$this->plugin_path = plugin_dir_path( __FILE__ );
-		$this->version     = '1.0.0';
+		$this->token          = 'woocommerce-dynamic-pricing-table';
+		$this->plugin_url     = plugin_dir_url( __FILE__ );
+		$this->plugin_path    = plugin_dir_path( __FILE__ );
+		$this->version        = '1.0.0';
 		$this->assets_version = '1.0.8';
 
 		register_activation_hook( __FILE__, array( $this, 'install' ) );
@@ -251,11 +251,13 @@ final class WC_Dynamic_Pricing_Table {
 	public function bulk_pricing_table_output( $pricing_rule_set ) {
 
 		$table_class = '';
-		$style = '';
+		$style       = '';
 		if ( isset( $pricing_rule_set['variation_rules'] ) && ! empty( $pricing_rule_set['variation_rules'] ) ) {
-			$style = 'style="display:none;"';
-			foreach ( $pricing_rule_set['variation_rules']['args']['variations'] as $variation_id ) {
-				$table_class .= ' dynamic-pricing-table-variation-' . $variation_id;
+			if ( isset( $pricing_rule_set['variation_rules']['args']['variations'] ) ) {
+				$style = 'style="display:none;"';
+				foreach ( $pricing_rule_set['variation_rules']['args']['variations'] as $variation_id ) {
+					$table_class .= ' dynamic-pricing-table-variation-' . $variation_id;
+				}
 			}
 		}
 
@@ -439,12 +441,18 @@ final class WC_Dynamic_Pricing_Table {
 	 * @since   1.0.0
 	 * @return  wc_add_notice()
 	 */
-	public
-	function category_discount_notification_message() {
+	public function category_discount_notification_message() {
 
 		$category_pricing_rule_sets = get_option( '_s_category_pricing_rules', array() );
-		$current_product_category   = $this->pricing_queried_object()->term_id;
-		$current_category_name      = $this->pricing_queried_object()->name;
+
+		$queried_object = $this->pricing_queried_object();
+
+		if ( empty( $queried_object ) ) {
+			return;
+		}
+
+		$current_product_category = $queried_object->term_id;
+		$current_category_name    = $queried_object->name;
 
 		foreach ( $category_pricing_rule_sets as $category_rules ) {
 
