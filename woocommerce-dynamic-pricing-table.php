@@ -406,11 +406,29 @@ final class WC_Dynamic_Pricing_Table {
 					switch ( $role_rules['rules'][0]['type'] ) {
 
 						case 'percent_product':
-							$info_message = sprintf( __( 'Hi %1$s as a %2$s you will receive a %3$s percent discount on all products.', 'woocommerce-dynamic-pricing-table' ), esc_attr( $current_user_display_name ), esc_attr( $current_user_role ), floatval( $role_discount_amount ) );
+
+							ob_start();
+							wc_get_template( 'pricing-rule-output/role-percent-product.php', array(
+								'current_user_display_name' => $current_user_display_name,
+								'current_user_role'         => $current_user_role,
+								'role_discount_amount'      => $role_discount_amount,
+							), 'woocommerce-dynamic-pricing', $this->plugin_path() . 'templates/' );
+
+							$info_message = ob_get_clean();
+
 							break;
 
 						case 'fixed_product':
-							$info_message = sprintf( __( 'Hi %1$s as a %2$s you will receive a %3$s discount on all products.', 'woocommerce-dynamic-pricing-table' ), esc_attr( $current_user_display_name ), esc_attr( $current_user_role ), wc_price( $role_discount_amount ) );
+
+							ob_start();
+							wc_get_template( 'pricing-rule-output/role-fixed-product.php', array(
+								'current_user_display_name' => $current_user_display_name,
+								'current_user_role'         => $current_user_role,
+								'role_discount_amount'      => $role_discount_amount,
+							), 'woocommerce-dynamic-pricing', $this->plugin_path() . 'templates/' );
+
+							$info_message = ob_get_clean();
+
 							break;
 
 					}
@@ -431,8 +449,7 @@ final class WC_Dynamic_Pricing_Table {
 	 * @access  public
 	 * @since   1.0.0
 	 */
-	public
-	function output_dynamic_pricing_role_message() {
+	public function output_dynamic_pricing_role_message() {
 		$this->role_discount_notification_message();
 	}
 
@@ -492,9 +509,23 @@ final class WC_Dynamic_Pricing_Table {
 	 * @access  public
 	 * @since   1.0.0
 	 */
-	public
-	function output_dynamic_pricing_category_message() {
+	public function output_dynamic_pricing_category_message() {
 		$this->category_discount_notification_message();
 	}
+
+
+
+	/** Helper Functions */
+	/**
+	 * Get the plugin path
+	 */
+	public function plugin_path() {
+		if ( $this->plugin_path ) {
+			return $this->plugin_path;
+		}
+
+		return $this->plugin_path = untrailingslashit( plugin_dir_path( dirname( __FILE__ ) ) );
+	}
+
 
 } // End Class
