@@ -5,21 +5,23 @@
 
         var $form = $(e.target);
 
-        if ($form.data('has_dynamic_pricing_table') !== 1) {
-            $form.data('has_dynamic_pricing_table', 1);
+        if ($(document).find('.dynamic-pricing-table-variation').length) {
+            if ($form.data('has_dynamic_pricing_table') !== 1) {
+                $form.data('has_dynamic_pricing_table', 1);
 
 
-            $form.on('show_variation', function (e, variation) {
+                $form.on('show_variation', function (e, variation) {
 
-                $form.find('table.dynamic-pricing-table').hide();
-                $form.find('table.dynamic-pricing-table-variation-' + variation.variation_id).show();
+                    $form.find('table.dynamic-pricing-table-variation').hide();
+                    $form.find('table.dynamic-pricing-table-variation-' + variation.variation_id).show();
 
 
-            });
+                });
 
-            setTimeout( function() {
-                $form.trigger( 'check_variations' );
-            }, 50 );
+                setTimeout(function () {
+                    $form.trigger('check_variations');
+                }, 50);
+            }
         }
 
 
