@@ -412,6 +412,7 @@ final class WC_Dynamic_Pricing_Table {
 								'current_user_display_name' => $current_user_display_name,
 								'current_user_role'         => $current_user_role,
 								'role_discount_amount'      => $role_discount_amount,
+								'rule' => $role_rules
 							), 'woocommerce-dynamic-pricing', $this->plugin_path() . 'templates/' );
 
 							$info_message = ob_get_clean();
@@ -425,6 +426,7 @@ final class WC_Dynamic_Pricing_Table {
 								'current_user_display_name' => $current_user_display_name,
 								'current_user_role'         => $current_user_role,
 								'role_discount_amount'      => $role_discount_amount,
+								'rule' => $role_rules
 							), 'woocommerce-dynamic-pricing', $this->plugin_path() . 'templates/' );
 
 							$info_message = ob_get_clean();
