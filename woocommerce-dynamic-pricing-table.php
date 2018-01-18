@@ -219,6 +219,9 @@ final class WC_Dynamic_Pricing_Table {
 
 		$valid_results = array();
 		foreach ( $results as $key => $result ) {
+
+			$execute_rules = true;
+
 			$from_date = empty( $result['date_from'] ) ? false : strtotime( date_i18n( 'Y-m-d 00:00:00', strtotime( $result['date_from'] ), false ) );
 			$to_date   = empty( $result['date_to'] ) ? false : strtotime( date_i18n( 'Y-m-d 00:00:00', strtotime( $result['date_to'] ), false ) );
 			$now       = current_time( 'timestamp' );
