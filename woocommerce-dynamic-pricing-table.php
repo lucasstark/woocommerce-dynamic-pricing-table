@@ -217,7 +217,26 @@ final class WC_Dynamic_Pricing_Table {
 			$results = $price_sets;
 		}
 
-		return $results;
+		$valid_results = array();
+		foreach ( $results as $key => $result ) {
+			$from_date = empty( $result['date_from'] ) ? false : strtotime( date_i18n( 'Y-m-d 00:00:00', strtotime( $result['date_from'] ), false ) );
+			$to_date   = empty( $result['date_to'] ) ? false : strtotime( date_i18n( 'Y-m-d 00:00:00', strtotime( $result['date_to'] ), false ) );
+			$now       = current_time( 'timestamp' );
+
+			if ( $from_date && $to_date && ! ( $now >= $from_date && $now <= $to_date ) ) {
+				$execute_rules = false;
+			} elseif ( $from_date && ! $to_date && ! ( $now >= $from_date ) ) {
+				$execute_rules = false;
+			} elseif ( $to_date && ! $from_date && ! ( $now <= $to_date ) ) {
+				$execute_rules = false;
+			}
+
+			if ( $execute_rules ) {
+				$valid_results[ $key ] = $result;
+			}
+		}
+
+		return $valid_results;
 	}
 
 	/**
@@ -412,7 +431,7 @@ final class WC_Dynamic_Pricing_Table {
 								'current_user_display_name' => $current_user_display_name,
 								'current_user_role'         => $current_user_role,
 								'role_discount_amount'      => $role_discount_amount,
-								'rule' => $role_rules
+								'rule'                      => $role_rules
 							), 'woocommerce-dynamic-pricing', $this->plugin_path() . 'templates/' );
 
 							$info_message = ob_get_clean();
@@ -426,7 +445,7 @@ final class WC_Dynamic_Pricing_Table {
 								'current_user_display_name' => $current_user_display_name,
 								'current_user_role'         => $current_user_role,
 								'role_discount_amount'      => $role_discount_amount,
-								'rule' => $role_rules
+								'rule'                      => $role_rules
 							), 'woocommerce-dynamic-pricing', $this->plugin_path() . 'templates/' );
 
 							$info_message = ob_get_clean();
