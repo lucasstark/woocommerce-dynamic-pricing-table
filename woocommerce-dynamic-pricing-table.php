@@ -3,11 +3,11 @@
  * Plugin Name:       WooCommerce Dynamic Pricing Table
  * Plugin URI:        https://github.com/lucasstark/woocommerce-dynamic-pricing-table
  * Description:       Displays a pricing discount table on WooCommerce products, a user role discount message and a simple category discount message when using the WooCommerce Dynamic Pricing plugin.
- * Version:           1.0.8
+ * Version:           1.0.9
  * Author:            Lucas Stark
  * Author URI:        https://elementstark.com
  * Requires at least: 4.6
- * Tested up to:      4.6
+ * Tested up to:      4.6.2
  *
  * Text Domain: woocommerce-dynamic-pricing-table
  * Domain Path: /languages/
@@ -242,6 +242,73 @@ final class WC_Dynamic_Pricing_Table {
 		return $valid_results;
 	}
 
+	public function filter_rulesets( $rulesets ) {
+		$valid = array();
+
+		foreach ( $rulesets as $key => $ruleset ) {
+
+			$pricing_conditions = $ruleset['conditions'];
+			$execute_rules      = true;
+
+			if ( is_array( $pricing_conditions ) && sizeof( $pricing_conditions ) > 0 ) {
+				$result = 0;
+				$conditions_met = 0;
+
+
+				foreach ( $pricing_conditions as $condition ) {
+					switch ( $condition['type'] ) {
+						case 'apply_to':
+							if ( is_array( $condition['args'] ) && isset( $condition['args']['applies_to'] ) ) {
+								if ( $condition['args']['applies_to'] == 'everyone' ) {
+									$result = 1;
+								} elseif ( $condition['args']['applies_to'] == 'unauthenticated' ) {
+									if ( ! is_user_logged_in() ) {
+										$result = 1;
+									}
+								} elseif ( $condition['args']['applies_to'] == 'authenticated' ) {
+									if ( is_user_logged_in() ) {
+										$result = 1;
+									}
+								} elseif ( $condition['args']['applies_to'] == 'roles' && isset( $condition['args']['roles'] ) && is_array( $condition['args']['roles'] ) ) {
+									if ( is_user_logged_in() ) {
+										foreach ( $condition['args']['roles'] as $role ) {
+											if ( current_user_can( $role ) ) {
+												$result = 1;
+												break;
+											}
+										}
+									}
+								}
+							}
+							break;
+						default:
+							$result = 0;
+							break;
+					}
+
+					$result         = apply_filters( 'woocommerce_dynamic_pricing_table_is_rule_set_valid_for_user', $result, $condition, $ruleset );
+					$conditions_met += $result;
+				}
+
+
+				if ( $ruleset['conditions_type'] == 'all' ) {
+					$execute_rules = $conditions_met == count( $pricing_conditions );
+				} elseif ( $ruleset['conditions_type'] == 'any' ) {
+					$execute_rules = $conditions_met > 0;
+				}
+			} else {
+				//empty conditions - default match, process price adjustment rules
+				$execute_rules = true;
+			}
+
+			if ( $execute_rules ) {
+				$valid[ $key ] = $ruleset;
+			}
+		}
+
+		return $valid;
+	}
+
 	/**
 	 * Gets the current user.
 	 * @access  public
@@ -283,6 +350,8 @@ final class WC_Dynamic_Pricing_Table {
 				}
 			}
 		}
+
+		do_action( 'woocommerce_dynamic_pricing_table_before_table', $pricing_rule_set );
 
 		$output = '<table ' . $style . ' class="dynamic-pricing-table ' . $table_class . '">';
 
@@ -388,15 +457,22 @@ final class WC_Dynamic_Pricing_Table {
 		$array_rule_sets = $this->get_pricing_array_rule_sets();
 
 
-		//if ( $array_rule_sets && is_array( $array_rule_sets ) && sizeof( $array_rule_sets ) == 1 ) {
-		foreach ( $array_rule_sets as $pricing_rule_set ) {
-			if ( $pricing_rule_set['mode'] == 'continuous' ) :
-				$this->bulk_pricing_table_output( $pricing_rule_set );
-			elseif ( $pricing_rule_set['mode'] == 'block' ) :
-				$this->special_offer_pricing_table_output( $pricing_rule_set );
-			endif;
+		if ( $array_rule_sets && is_array( $array_rule_sets ) ) {
+
+			if ( apply_filters( 'woocommerce_dynamic_pricing_table_filter_rules', true ) ) {
+				$valid_rules = apply_filters( 'woocommerce_dynamic_pricing_table_get_filtered_rules', $this->filter_rulesets( $array_rule_sets ), $array_rule_sets );
+			} else {
+				$valid_rules = $array_rule_sets;
+			}
+
+			foreach ( $valid_rules as $pricing_rule_set ) {
+				if ( $pricing_rule_set['mode'] == 'continuous' ) :
+					$this->bulk_pricing_table_output( $pricing_rule_set );
+				elseif ( $pricing_rule_set['mode'] == 'block' ) :
+					$this->special_offer_pricing_table_output( $pricing_rule_set );
+				endif;
+			}
 		}
-		//}
 	}
 
 	/**
