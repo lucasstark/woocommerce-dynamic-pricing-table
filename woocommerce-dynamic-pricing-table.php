@@ -3,11 +3,14 @@
  * Plugin Name:       WooCommerce Dynamic Pricing Table
  * Plugin URI:        https://github.com/lucasstark/woocommerce-dynamic-pricing-table
  * Description:       Displays a pricing discount table on WooCommerce products, a user role discount message and a simple category discount message when using the WooCommerce Dynamic Pricing plugin.
- * Version:           1.0.9
+ * Version:           1.0.10
  * Author:            Lucas Stark
  * Author URI:        https://elementstark.com
  * Requires at least: 4.6
- * Tested up to:      4.6.2
+ * Tested up to:      4.9.2
+ *
+ * WC requires at least: 3.0.0
+ * WC tested up to: 3.3.0
  *
  * Text Domain: woocommerce-dynamic-pricing-table
  * Domain Path: /languages/
@@ -251,7 +254,7 @@ final class WC_Dynamic_Pricing_Table {
 			$execute_rules      = true;
 
 			if ( is_array( $pricing_conditions ) && sizeof( $pricing_conditions ) > 0 ) {
-				$result = 0;
+				$result         = 0;
 				$conditions_met = 0;
 
 
@@ -418,7 +421,22 @@ final class WC_Dynamic_Pricing_Table {
 
 			$output .= '<tr>';
 
-			$output .= '<td><span class="discount-quantity">' . sprintf( __( 'Buy %1$s get %2$s more discounted', 'woocommerce-dynamic-pricing-table' ), wc_stock_amount( $pricing_rule_set['blockrules'][ $key ]['from'] ), wc_stock_amount( $pricing_rule_set['blockrules'][ $key ]['adjust'] ) ) . '</span></td>';
+			$to = $pricing_rule_set['blockrules'][ $key ]['adjust'];
+			if ( $to == '1000000' ) {
+				$to = 'unlimited';
+			} else {
+				wc_stock_amount( $pricing_rule_set['blockrules'][ $key ]['adjust'] );
+			}
+
+			switch ( $pricing_rule_set['blockrules'][ $key ]['type'] ) {
+				case 'fixed_adjustment':
+				case 'percent_adjustment':
+					$output .= '<td><span class="discount-quantity">' . sprintf( __( 'Buy %1$s get %2$s more discounted', 'woocommerce-dynamic-pricing-table' ), wc_stock_amount( $pricing_rule_set['blockrules'][ $key ]['from'] ), $to ) . '</span></td>';
+					break;
+				case 'fixed_price':
+					$output .= '<td><span class="discount-quantity">' . sprintf( __( 'Buy %1$s get %2$s more at', 'woocommerce-dynamic-pricing-table' ), wc_stock_amount( $pricing_rule_set['blockrules'][ $key ]['from'] ), $to ) . '</span></td>';
+
+			}
 
 			switch ( $pricing_rule_set['blockrules'][ $key ]['type'] ) {
 
