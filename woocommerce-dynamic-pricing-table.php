@@ -3,7 +3,7 @@
  * Plugin Name:       WooCommerce Dynamic Pricing Table
  * Plugin URI:        https://github.com/lucasstark/woocommerce-dynamic-pricing-table
  * Description:       Displays a pricing discount table on WooCommerce products, a user role discount message and a simple category discount message when using the WooCommerce Dynamic Pricing plugin.
- * Version:           1.0.11
+ * Version:           1.0.12
  * Author:            Lucas Stark
  * Author URI:        https://elementstark.com
  * Requires at least: 4.6
@@ -156,6 +156,7 @@ final class WC_Dynamic_Pricing_Table {
 	 */
 	public function plugin_setup() {
 		if ( class_exists( 'WC_Dynamic_Pricing' ) ) {
+			add_action( 'woocommerce_get_price_html', array( $this, 'output_lowest_simple_price' ), 99, 2 );
 			add_action( 'woocommerce_before_add_to_cart_button', array( $this, 'output_dynamic_pricing_table' ) );
 
 			if ( ! is_admin() ) {
@@ -191,11 +192,13 @@ final class WC_Dynamic_Pricing_Table {
 	 * @since   1.0.0
 	 * @return  get_post_meta()
 	 */
-	public function get_pricing_array_rule_sets() {
-
+	public function get_pricing_array_rule_sets( $product_id = false ) {
+		if ( $product_id === false ) {
+			$product_id = get_the_ID();
+		}
 		$results    = array();
-		$product    = wc_get_product( get_the_ID() );
-		$price_sets = get_post_meta( get_the_ID(), '_pricing_rules', true );
+		$product    = wc_get_product( $product_id );
+		$price_sets = get_post_meta( $product_id, '_pricing_rules', true );
 
 
 		if ( empty( $price_sets ) ) {
@@ -358,7 +361,7 @@ final class WC_Dynamic_Pricing_Table {
 
 		$output = '<table ' . $style . ' class="dynamic-pricing-table ' . $table_class . '">';
 
-		$output .= '<th>' . __( 'Quantity', 'woocommerce-dynamic-pricing-table' ) . '</th><th>' . apply_filters('wc_dynamic_pricing_table_header_text', __( 'Bulk Purchase Pricing', 'woocommerce-dynamic-pricing-table' )) . '</th>';
+		$output .= '<th>' . __( 'Quantity', 'woocommerce-dynamic-pricing-table' ) . '</th><th>' . apply_filters( 'wc_dynamic_pricing_table_header_text', __( 'Bulk Purchase Pricing', 'woocommerce-dynamic-pricing-table' ) ) . '</th>';
 
 		foreach ( $pricing_rule_set['rules'] as $key => $value ) {
 
@@ -493,6 +496,78 @@ final class WC_Dynamic_Pricing_Table {
 		}
 	}
 
+	public function output_lowest_simple_price( $price_html, $product ) {
+
+		if ( apply_filters( 'woocommerce_dynamic_pricing_show_lowest_price', true, $product ) ) {
+			$array_rule_sets = $this->get_pricing_array_rule_sets();
+
+			$lowest_price = false;
+			if ( $array_rule_sets && is_array( $array_rule_sets ) ) {
+
+				if ( apply_filters( 'woocommerce_dynamic_pricing_table_filter_rules', true ) ) {
+					$valid_rules = apply_filters( 'woocommerce_dynamic_pricing_table_get_filtered_rules', $this->filter_rulesets( $array_rule_sets ), $array_rule_sets );
+				} else {
+					$valid_rules = $array_rule_sets;
+				}
+
+				foreach ( $valid_rules as $pricing_rule_set ) {
+					if ( $pricing_rule_set['mode'] == 'continuous' ) :
+						$working_price = $this->get_adjusted_price( $pricing_rule_set, $product->get_price( 'edit' ) );
+						if ( $working_price < $lowest_price || $lowest_price === false ) {
+							$lowest_price = $working_price;
+						}
+
+					endif;
+				}
+			}
+
+			return apply_filters( 'woocommerce_dynamic_pricing_get_lowest_price_html', 'From ' . wc_price( $lowest_price ), $lowest_price, $product, $array_rule_sets );
+		} else {
+			return $price_html;
+		}
+
+	}
+
+	protected function get_adjusted_price( $set, $price ) {
+		$result = false;
+
+		$pricing_rules = $set['rules'];
+
+		if ( is_array( $pricing_rules ) && sizeof( $pricing_rules ) > 0 ) {
+			foreach ( $pricing_rules as $rule ) {
+
+				if ( $rule['from'] == '*' ) {
+					$rule['from'] = 0;
+				}
+
+				if ( empty( $rule['to'] ) || $rule['to'] == '*' ) {
+					$rule['to'] = PHP_INT_MIN;
+				}
+
+				$amount       = $rule['amount'];
+				$num_decimals = apply_filters( 'woocommerce_dynamic_pricing_get_decimals', (int) get_option( 'woocommerce_price_num_decimals' ) );
+				switch ( $rule['type'] ) {
+					case 'price_discount':
+						$adjusted = floatval( $price ) - floatval( $amount );
+						$result   = $adjusted >= 0 ? $adjusted : 0;
+						break;
+					case 'percentage_discount':
+						$amount = $amount / 100;
+						$result = round( floatval( $price ) - ( floatval( $amount ) * $price ), (int) $num_decimals );
+						break;
+					case 'fixed_price':
+						$result = round( $amount, (int) $num_decimals );
+						break;
+					default:
+						$result = false;
+						break;
+				}
+			}
+		}
+
+		return $result;
+	}
+
 	/**
 	 * The role discount notification message.
 	 * @access  public
@@ -583,7 +658,7 @@ final class WC_Dynamic_Pricing_Table {
 
 		$queried_object = $this->pricing_queried_object();
 
-		if ( empty( $queried_object ) || !isset($queried_object->term_id) ) {
+		if ( empty( $queried_object ) || ! isset( $queried_object->term_id ) ) {
 			return;
 		}
 
