@@ -498,7 +498,11 @@ final class WC_Dynamic_Pricing_Table {
 
 	public function output_lowest_simple_price( $price_html, $product ) {
 
-		if ( apply_filters( 'woocommerce_dynamic_pricing_show_lowest_price', true, $product ) ) {
+		if ( $product->get_type() == 'variation' ) {
+			return $price_html;
+		}
+
+		if ( apply_filters( 'woocommerce_dynamic_pricing_show_lowest_price', false, $product ) ) {
 			$array_rule_sets = $this->get_pricing_array_rule_sets();
 
 			$lowest_price = false;
@@ -521,7 +525,14 @@ final class WC_Dynamic_Pricing_Table {
 				}
 			}
 
-			return apply_filters( 'woocommerce_dynamic_pricing_get_lowest_price_html', 'From ' . wc_price( $lowest_price ), $lowest_price, $product, $array_rule_sets );
+			if ( $product->get_type() == 'variation' ) {
+				return apply_filters( 'woocommerce_dynamic_pricing_get_lowest_price_html', wc_price( $lowest_price ), $lowest_price, $product, $array_rule_sets );
+
+			} else {
+				return apply_filters( 'woocommerce_dynamic_pricing_get_lowest_price_html', 'From ' . wc_price( $lowest_price ), $lowest_price, $product, $array_rule_sets );
+
+			}
+
 		} else {
 			return $price_html;
 		}
