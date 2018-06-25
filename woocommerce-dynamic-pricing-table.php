@@ -387,7 +387,7 @@ final class WC_Dynamic_Pricing_Table {
 					break;
 
 				case 'percentage_discount':
-					$output .= '<td><span class="discount-amount">' . floatval( $pricing_rule_set['rules'][ $key ]['amount'] ) . __( '% Discount', 'woocommerce-dynamic-pricing-table' ) . '</span></td>';
+					$output .= '<td><span class="discount-amount">' . esc_html( $pricing_rule_set['rules'][ $key ]['amount'] ) . __( '% Discount', 'woocommerce-dynamic-pricing-table' ) . '</span></td>';
 					break;
 
 				case 'fixed_price':
