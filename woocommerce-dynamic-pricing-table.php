@@ -3,14 +3,14 @@
  * Plugin Name:       WooCommerce Dynamic Pricing Table
  * Plugin URI:        https://github.com/lucasstark/woocommerce-dynamic-pricing-table
  * Description:       Displays a pricing discount table on WooCommerce products, a user role discount message and a simple category discount message when using the WooCommerce Dynamic Pricing plugin.
- * Version:           1.1.0
+ * Version:           1.1.1
  * Author:            Lucas Stark
  * Author URI:        https://elementstark.com
  * Requires at least: 4.6
  * Tested up to:      4.9.8
  *
  * WC requires at least: 3.0.0
- * WC tested up to: 3.4.4
+ * WC tested up to: 3.5.1
  *
  * Text Domain: woocommerce-dynamic-pricing-table
  * Domain Path: /languages/
@@ -35,7 +35,7 @@ WC_Dynamic_Pricing_Table();
 /**
  * Main WC_Dynamic_Pricing_Table Class
  *
- * @class WC_Dynamic_Pricing_Table
+ * @class     WC_Dynamic_Pricing_Table
  * @version   1.0.0
  * @since     1.0.0
  * @package   WC_Dynamic_Pricing_Table
@@ -44,6 +44,7 @@ final class WC_Dynamic_Pricing_Table {
 
 	/**
 	 * WC_Dynamic_Pricing_Table The single instance of WC_Dynamic_Pricing_Table.
+	 *
 	 * @var     object
 	 * @access  private
 	 * @since   1.0.0
@@ -52,6 +53,7 @@ final class WC_Dynamic_Pricing_Table {
 
 	/**
 	 * The token.
+	 *
 	 * @var     string
 	 * @access  public
 	 * @since   1.0.0
@@ -60,6 +62,7 @@ final class WC_Dynamic_Pricing_Table {
 
 	/**
 	 * The version number.
+	 *
 	 * @var     string
 	 * @access  public
 	 * @since   1.0.0
@@ -69,15 +72,17 @@ final class WC_Dynamic_Pricing_Table {
 
 	/**
 	 * The js and css version number
+	 *
 	 * @var string
 	 * @access public
-	 * @since 1.0.8
+	 * @since  1.0.8
 	 */
 	public $assets_version;
 
 
 	/**
 	 * Constructor function.
+	 *
 	 * @access  public
 	 * @since   1.0.0
 	 * @return  void
@@ -118,6 +123,7 @@ final class WC_Dynamic_Pricing_Table {
 
 	/**
 	 * Load the localisation file.
+	 *
 	 * @access  public
 	 * @since   1.0.0
 	 * @return  void
@@ -129,6 +135,7 @@ final class WC_Dynamic_Pricing_Table {
 	/**
 	 * Installation.
 	 * Runs on activation. Logs the version number.
+	 *
 	 * @access  public
 	 * @since   1.0.0
 	 * @return  void
@@ -139,6 +146,7 @@ final class WC_Dynamic_Pricing_Table {
 
 	/**
 	 * Log the plugin version number.
+	 *
 	 * @access  private
 	 * @since   1.0.0
 	 * @return  void
@@ -152,6 +160,7 @@ final class WC_Dynamic_Pricing_Table {
 	 * Setup all the things.
 	 * Only executes if WooCommerce Dynamic Pricing is active.
 	 * If WooCommerce Dynamic Pricing is inactive an admin notice is displayed.
+	 *
 	 * @return void
 	 */
 	public function plugin_setup() {
@@ -171,6 +180,7 @@ final class WC_Dynamic_Pricing_Table {
 	/**
 	 * WooCommerce Dynamic Pricing plugin install notice.
 	 * If the user activates this plugin while not having the WooCommerce Dynamic Pricing plugin installed or activated, prompt them to install WooCommerce Dynamic Pricing.
+	 *
 	 * @since   1.0.0
 	 * @return  void
 	 */
@@ -188,6 +198,7 @@ final class WC_Dynamic_Pricing_Table {
 
 	/**
 	 * Gets the dynamic pricing rules sets from the post meta.
+	 *
 	 * @access  public
 	 * @since   1.0.0
 	 * @return  get_post_meta()
@@ -285,7 +296,7 @@ final class WC_Dynamic_Pricing_Table {
 										}
 									}
 								} elseif ( $condition['args']['applies_to'] == 'groups' && isset( $condition['args']['groups'] ) && is_array( $condition['args']['groups'] ) ) {
-									if ( is_user_logged_in() && class_exists('Groups_User') ) {
+									if ( is_user_logged_in() && class_exists( 'Groups_User' ) ) {
 										$groups_user = new Groups_User( get_current_user_id() );
 										foreach ( $condition['args']['groups'] as $group ) {
 											$current_group = Groups_Group::read( $group );
@@ -330,6 +341,7 @@ final class WC_Dynamic_Pricing_Table {
 
 	/**
 	 * Gets the current user.
+	 *
 	 * @access  public
 	 * @since   1.0.0
 	 * @return  wp_get_current_user()
@@ -341,6 +353,7 @@ final class WC_Dynamic_Pricing_Table {
 
 	/**
 	 * Gets the current category.
+	 *
 	 * @access  public
 	 * @since   1.0.0
 	 * @return  get_queiried object()
@@ -352,6 +365,7 @@ final class WC_Dynamic_Pricing_Table {
 
 	/**
 	 * Outputs the dynamic bulk pricing table.
+	 *
 	 * @access  public
 	 * @since   1.0.0
 	 * @return  $output
@@ -404,13 +418,17 @@ final class WC_Dynamic_Pricing_Table {
 					break;
 
 				case 'fixed_price':
-					$output .= '<td><span class="discount-amount">' . sprintf( __( '%1$s Per Item', 'woocommerce-dynamic-pricing-table' ), wc_price( $pricing_rule_set['rules'][ $key ]['amount'] ) ) . '</span></td>';
+					$display_price = wc_get_price_to_display( wc_get_product(), array(
+						'qty'   => 1,
+						'price' => $pricing_rule_set['rules'][ $key ]['amount']
+					) );
+
+					$output        .= '<td><span class="discount-amount">' . sprintf( __( '%1$s Per Item', 'woocommerce-dynamic-pricing-table' ), wc_price( $display_price ) ) . '</span></td>';
 					break;
 
 			}
 
 			$output .= '</tr>';
-
 
 
 		}
@@ -424,6 +442,7 @@ final class WC_Dynamic_Pricing_Table {
 
 	/**
 	 * Outputs the dynamic special offer pricing table.
+	 *
 	 * @access  public
 	 * @since   1.0.0
 	 * @return  $output
@@ -485,6 +504,7 @@ final class WC_Dynamic_Pricing_Table {
 
 	/**
 	 * Outputs the dynamic pricing table.
+	 *
 	 * @access  public
 	 * @since   1.0.0
 	 */
@@ -596,6 +616,7 @@ final class WC_Dynamic_Pricing_Table {
 
 	/**
 	 * The role discount notification message.
+	 *
 	 * @access  public
 	 * @since   1.0.0
 	 * @return  wc_add_notice()
@@ -665,6 +686,7 @@ final class WC_Dynamic_Pricing_Table {
 
 	/**
 	 * Outputs the role notificaton message.
+	 *
 	 * @access  public
 	 * @since   1.0.0
 	 */
@@ -674,6 +696,7 @@ final class WC_Dynamic_Pricing_Table {
 
 	/**
 	 * The category discount notification message.
+	 *
 	 * @access  public
 	 * @since   1.0.0
 	 * @return  wc_add_notice()
@@ -725,6 +748,7 @@ final class WC_Dynamic_Pricing_Table {
 
 	/**
 	 * Outputs the category notificaton message.
+	 *
 	 * @access  public
 	 * @since   1.0.0
 	 */
