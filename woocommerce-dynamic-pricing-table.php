@@ -3,14 +3,14 @@
  * Plugin Name:       WooCommerce Dynamic Pricing Table
  * Plugin URI:        https://github.com/lucasstark/woocommerce-dynamic-pricing-table
  * Description:       Displays a pricing discount table on WooCommerce products, a user role discount message and a simple category discount message when using the WooCommerce Dynamic Pricing plugin.
- * Version:           1.1.1
+ * Version:           1.1.2
  * Author:            Lucas Stark
  * Author URI:        https://elementstark.com
  * Requires at least: 4.6
- * Tested up to:      4.9.8
+ * Tested up to:      5.0.2
  *
  * WC requires at least: 3.0.0
- * WC tested up to: 3.5.1
+ * WC tested up to: 3.5.3
  *
  * Text Domain: woocommerce-dynamic-pricing-table
  * Domain Path: /languages/
@@ -111,7 +111,7 @@ final class WC_Dynamic_Pricing_Table {
 	 * @since   1.0.0
 	 * @static
 	 * @see     WC_Dynamic_Pricing_Table()
-	 * @return  Main WC_Dynamic_Pricing_Table instance
+	 * @return  WC_Dynamic_Pricing_Table instance
 	 */
 	public static function instance() {
 		if ( is_null( self::$_instance ) ) {
@@ -201,7 +201,7 @@ final class WC_Dynamic_Pricing_Table {
 	 *
 	 * @access  public
 	 * @since   1.0.0
-	 * @return  get_post_meta()
+	 * @return  array
 	 */
 	public function get_pricing_array_rule_sets( $product_id = false ) {
 		if ( $product_id === false ) {
@@ -215,8 +215,8 @@ final class WC_Dynamic_Pricing_Table {
 		if ( empty( $price_sets ) ) {
 
 
-			$price_sets = get_option( '_a_category_pricing_rules', array() );
 
+			$price_sets = get_option( '_a_category_pricing_rules', array() );
 			if ( ! empty( $price_sets ) ) {
 
 				foreach ( $price_sets as $key => $price_set ) {
@@ -228,10 +228,24 @@ final class WC_Dynamic_Pricing_Table {
 					}
 
 				}
-
 			}
 		} else {
 			$results = $price_sets;
+
+			$price_sets = get_option( '_a_category_pricing_rules', array() );
+			if ( ! empty( $price_sets ) ) {
+
+				foreach ( $price_sets as $key => $price_set ) {
+					$terms = WC_Dynamic_Pricing_Compatibility::get_product_category_ids( $product );
+					if ( count( array_intersect( $price_set['collector']['args']['cats'], $terms ) ) > 0 ) {
+						if ( count( array_intersect( $price_set['targets'], $terms ) ) > 0 ) {
+							$results[ $key ] = $price_set;
+						}
+					}
+
+				}
+			}
+
 		}
 
 		$valid_results = array();
@@ -344,10 +358,9 @@ final class WC_Dynamic_Pricing_Table {
 	 *
 	 * @access  public
 	 * @since   1.0.0
-	 * @return  wp_get_current_user()
+	 * @return  WP_User
 	 */
-	public
-	function get_current_user() {
+	public function get_current_user() {
 		return wp_get_current_user();
 	}
 
@@ -356,10 +369,9 @@ final class WC_Dynamic_Pricing_Table {
 	 *
 	 * @access  public
 	 * @since   1.0.0
-	 * @return  get_queiried object()
+	 * @return  object
 	 */
-	public
-	function pricing_queried_object() {
+	public function pricing_queried_object() {
 		return get_queried_object();
 	}
 
@@ -368,7 +380,6 @@ final class WC_Dynamic_Pricing_Table {
 	 *
 	 * @access  public
 	 * @since   1.0.0
-	 * @return  $output
 	 */
 	public function bulk_pricing_table_output( $pricing_rule_set ) {
 
@@ -445,7 +456,6 @@ final class WC_Dynamic_Pricing_Table {
 	 *
 	 * @access  public
 	 * @since   1.0.0
-	 * @return  $output
 	 */
 	public function special_offer_pricing_table_output( $pricing_rule_set ) {
 
@@ -619,7 +629,6 @@ final class WC_Dynamic_Pricing_Table {
 	 *
 	 * @access  public
 	 * @since   1.0.0
-	 * @return  wc_add_notice()
 	 */
 	public function role_discount_notification_message() {
 
@@ -699,7 +708,6 @@ final class WC_Dynamic_Pricing_Table {
 	 *
 	 * @access  public
 	 * @since   1.0.0
-	 * @return  wc_add_notice()
 	 */
 	public function category_discount_notification_message() {
 
@@ -747,7 +755,7 @@ final class WC_Dynamic_Pricing_Table {
 	}
 
 	/**
-	 * Outputs the category notificaton message.
+	 * Outputs the category notification message.
 	 *
 	 * @access  public
 	 * @since   1.0.0
