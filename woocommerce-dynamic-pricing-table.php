@@ -429,7 +429,7 @@ final class WC_Dynamic_Pricing_Table {
 					break;
 
 				case 'fixed_price':
-					$amount = apply_filter('wc_dynamic_pricing_table_get_fixed_price', $pricing_rule_set['rules'][ $key ]['amount']);
+					$amount = apply_filters('wc_dynamic_pricing_table_get_fixed_price', $pricing_rule_set['rules'][ $key ]['amount']);
 					$display_price = wc_get_price_to_display( wc_get_product(), array(
 						'qty'   => 1,
 						'price' => $amount
