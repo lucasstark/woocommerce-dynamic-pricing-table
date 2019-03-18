@@ -3,7 +3,7 @@
  * Plugin Name:       WooCommerce Dynamic Pricing Table
  * Plugin URI:        https://github.com/lucasstark/woocommerce-dynamic-pricing-table
  * Description:       Displays a pricing discount table on WooCommerce products, a user role discount message and a simple category discount message when using the WooCommerce Dynamic Pricing plugin.
- * Version:           1.1.3
+ * Version:           1.1.4
  * Author:            Lucas Stark
  * Author URI:        https://elementstark.com
  * Requires at least: 4.6
@@ -399,7 +399,7 @@ final class WC_Dynamic_Pricing_Table {
 
 		$output = '<table ' . $style . ' class="dynamic-pricing-table ' . $table_class . '">';
 
-		$output .= '<th>' . __( 'Quantity', 'woocommerce-dynamic-pricing-table' ) . '</th><th>' . apply_filters( 'wc_dynamic_pricing_table_header_text', __( 'Bulk Purchase Pricing', 'woocommerce-dynamic-pricing-table' ) ) . '</th>';
+		$output .= '<th>' . apply_filters( 'wc_dynamic_pricing_table_header_quantity_text', __( 'Quantity', 'woocommerce-dynamic-pricing-table' ) ) . '</th><th>' . apply_filters( 'wc_dynamic_pricing_table_header_text', __( 'Bulk Purchase Pricing', 'woocommerce-dynamic-pricing-table' ) ) . '</th>';
 
 		foreach ( $pricing_rule_set['rules'] as $key => $value ) {
 
