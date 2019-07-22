@@ -3,7 +3,7 @@
  * Plugin Name:       WooCommerce Dynamic Pricing Table
  * Plugin URI:        https://github.com/lucasstark/woocommerce-dynamic-pricing-table
  * Description:       Displays a pricing discount table on WooCommerce products, a user role discount message and a simple category discount message when using the WooCommerce Dynamic Pricing plugin.
- * Version:           1.1.4
+ * Version:           1.1.5
  * Author:            Lucas Stark
  * Author URI:        https://elementstark.com
  * Requires at least: 4.6
@@ -24,8 +24,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Returns the main instance of WC_Dynamic_Pricing_Table to prevent the need to use globals.
  *
- * @since   1.0.0
  * @return  object WC_Dynamic_Pricing_Table
+ * @since   1.0.0
  */
 function WC_Dynamic_Pricing_Table() {
 	return WC_Dynamic_Pricing_Table::instance();
@@ -84,8 +84,8 @@ final class WC_Dynamic_Pricing_Table {
 	 * Constructor function.
 	 *
 	 * @access  public
-	 * @since   1.0.0
 	 * @return  void
+	 * @since   1.0.0
 	 */
 	public function __construct() {
 		$this->token          = 'woocommerce-dynamic-pricing-table';
@@ -108,10 +108,10 @@ final class WC_Dynamic_Pricing_Table {
 	 *
 	 * Ensures only one instance of WC_Dynamic_Pricing_Table is loaded or can be loaded.
 	 *
+	 * @return  WC_Dynamic_Pricing_Table instance
+	 * @see     WC_Dynamic_Pricing_Table()
 	 * @since   1.0.0
 	 * @static
-	 * @see     WC_Dynamic_Pricing_Table()
-	 * @return  WC_Dynamic_Pricing_Table instance
 	 */
 	public static function instance() {
 		if ( is_null( self::$_instance ) ) {
@@ -125,8 +125,8 @@ final class WC_Dynamic_Pricing_Table {
 	 * Load the localisation file.
 	 *
 	 * @access  public
-	 * @since   1.0.0
 	 * @return  void
+	 * @since   1.0.0
 	 */
 	public function load_plugin_textdomain() {
 		load_plugin_textdomain( 'woocommerce-dynamic-pricing-table', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
@@ -137,8 +137,8 @@ final class WC_Dynamic_Pricing_Table {
 	 * Runs on activation. Logs the version number.
 	 *
 	 * @access  public
-	 * @since   1.0.0
 	 * @return  void
+	 * @since   1.0.0
 	 */
 	public function install() {
 		$this->log_plugin_version_number();
@@ -148,8 +148,8 @@ final class WC_Dynamic_Pricing_Table {
 	 * Log the plugin version number.
 	 *
 	 * @access  private
-	 * @since   1.0.0
 	 * @return  void
+	 * @since   1.0.0
 	 */
 	private function log_plugin_version_number() {
 		// Log the version number.
@@ -181,8 +181,8 @@ final class WC_Dynamic_Pricing_Table {
 	 * WooCommerce Dynamic Pricing plugin install notice.
 	 * If the user activates this plugin while not having the WooCommerce Dynamic Pricing plugin installed or activated, prompt them to install WooCommerce Dynamic Pricing.
 	 *
-	 * @since   1.0.0
 	 * @return  void
+	 * @since   1.0.0
 	 */
 	public function install_wc_dynamic_pricing_notice() {
 		echo '<div class="notice is-dismissible updated">
@@ -200,8 +200,8 @@ final class WC_Dynamic_Pricing_Table {
 	 * Gets the dynamic pricing rules sets from the post meta.
 	 *
 	 * @access  public
-	 * @since   1.0.0
 	 * @return  array
+	 * @since   1.0.0
 	 */
 	public function get_pricing_array_rule_sets( $product_id = false ) {
 		if ( $product_id === false ) {
@@ -213,7 +213,6 @@ final class WC_Dynamic_Pricing_Table {
 
 
 		if ( empty( $price_sets ) ) {
-
 
 
 			$price_sets = get_option( '_a_category_pricing_rules', array() );
@@ -357,8 +356,8 @@ final class WC_Dynamic_Pricing_Table {
 	 * Gets the current user.
 	 *
 	 * @access  public
-	 * @since   1.0.0
 	 * @return  WP_User
+	 * @since   1.0.0
 	 */
 	public function get_current_user() {
 		return wp_get_current_user();
@@ -368,8 +367,8 @@ final class WC_Dynamic_Pricing_Table {
 	 * Gets the current category.
 	 *
 	 * @access  public
-	 * @since   1.0.0
 	 * @return  object
+	 * @since   1.0.0
 	 */
 	public function pricing_queried_object() {
 		return get_queried_object();
@@ -429,13 +428,19 @@ final class WC_Dynamic_Pricing_Table {
 					break;
 
 				case 'fixed_price':
-					$amount = apply_filters('wc_dynamic_pricing_table_get_fixed_price', $pricing_rule_set['rules'][ $key ]['amount']);
+					$amount = apply_filters( 'wc_dynamic_pricing_table_get_fixed_price', $pricing_rule_set['rules'][ $key ]['amount'] );
+
+					$sep    = wc_get_price_decimal_separator();
+					$amount = str_replace( $sep, '.', $amount );
+
 					$display_price = wc_get_price_to_display( wc_get_product(), array(
 						'qty'   => 1,
 						'price' => $amount
 					) );
 
-					$output        .= '<td><span class="discount-amount">' . sprintf( __( '%1$s Per Item', 'woocommerce-dynamic-pricing-table' ), wc_price( $display_price ) ) . '</span></td>';
+					//$display_price = str_replace('.', $sep, $display_price);
+
+					$output .= '<td><span class="discount-amount">' . sprintf( __( '%1$s Per Item', 'woocommerce-dynamic-pricing-table' ), wc_price( $display_price ) ) . '</span></td>';
 					break;
 
 			}
