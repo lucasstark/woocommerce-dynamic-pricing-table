@@ -18,6 +18,10 @@
 
                 });
 
+                $form.on('reset_data', function() {
+                    $form.find('table.dynamic-pricing-table-variation').hide();
+                });
+
                 setTimeout(function () {
                     $form.trigger('check_variations');
                 }, 50);

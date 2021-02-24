@@ -3,14 +3,14 @@
  * Plugin Name:       WooCommerce Dynamic Pricing Table
  * Plugin URI:        https://github.com/lucasstark/woocommerce-dynamic-pricing-table
  * Description:       Displays a pricing discount table on WooCommerce products, a user role discount message and a simple category discount message when using the WooCommerce Dynamic Pricing plugin.
- * Version:           1.1.7
+ * Version:           1.1.8
  * Author:            Lucas Stark
  * Author URI:        https://elementstark.com
  * Requires at least: 4.6
- * Tested up to:      5.6
+ * Tested up to:      5.7
  *
  * WC requires at least: 4.0.0
- * WC tested up to: 5.0
+ * WC tested up to: 5.1
  *
  * Text Domain: woocommerce-dynamic-pricing-table
  * Domain Path: /languages/
@@ -92,7 +92,7 @@ final class WC_Dynamic_Pricing_Table {
 		$this->plugin_url     = plugin_dir_url( __FILE__ );
 		$this->plugin_path    = plugin_dir_path( __FILE__ );
 		$this->version        = '1.0.1';
-		$this->assets_version = '1.0.9';
+		$this->assets_version = '1.1.8';
 
 		register_activation_hook( __FILE__, array( $this, 'install' ) );
 
